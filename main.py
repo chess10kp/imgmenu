@@ -61,7 +61,6 @@ class Window(Gtk.Window):
 
 def compress_images(directory="Pictures/wp"):
     from PIL import Image
-    import PIL,glob
 
     if not os.path.exists(f"{user_home}/.local/pmenu"):
         os.makedirs(f"{user_home}/.local/pmenu")
