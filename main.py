@@ -1,12 +1,15 @@
+from os.path import islink
+import pathlib
 import gi
 import os
-
 
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GdkPixbuf, Gdk
 
 from config import config
+from cmdline import args
 
+user_home = os.path.expanduser("~")
 
 class Window(Gtk.Window):
     """Main window"""
@@ -15,28 +18,16 @@ class Window(Gtk.Window):
         super().__init__(title="H")
         main_box = Gtk.Grid()
         self.add(main_box)
-        # for filename in os.listdir("/home/nitin/Pictures/wp/"):
-        #     print(f"/home/nitin/Pictures/wp/{filename}")
-        #     pixbuf = GdkPixbuf.Pixbuf.new_from_file(f"/home/nitin/Pictures/wp/{filename}")
-        #     img = Gtk.Image.new_from_pixbuf(pixbuf)
-        #     btn = Gtk.Button()
-        #     aspect_ratio = pixbuf.get_width() / pixbuf.get_height()
-        #     scaled_width = 240
-        #     scaled_height = int(scaled_width / aspect_ratio)
-        #     scaled_buf = pixbuf.scale_simple(scaled_width, scaled_height, GdkPixbuf.InterpType.BILINEAR)
-        #     img = Gtk.Image.new_from_pixbuf(scaled_buf)
-        #     btn.add(img)
-        #     main_box.add(btn)
 
         row = 0 
         col = 0
-        for file in os.listdir("/home/nitin/Pictures/wp/"):
+        for file in os.listdir(f"{user_home}/.local/pmenu"):
             pixbuf = GdkPixbuf.Pixbuf.new_from_file(
-                f"/home/nitin/Pictures/wp/{file}"
+                f"{user_home}/.local/pmenu/{file}"
             )
             img = Gtk.Image.new_from_pixbuf(pixbuf)
             btn = Gtk.Button()
-            btn.connect("clicked", self.on_button_clicked, file, "/home/nitin/Pictures/wp/")
+            btn.connect("clicked", self.on_button_clicked, file, f"{user_home}/.local/pmenu/")
             aspect_ratio = pixbuf.get_width() / pixbuf.get_height()
             scaled_width = 240
             scaled_height = int(scaled_width / aspect_ratio)
@@ -64,16 +55,37 @@ class Window(Gtk.Window):
     def print_window_size(self, widget, data=None):
         print(widget.get_size)
 
-    def main_quit():
+    def main_quit(self):
         Gtk.main_quit()
 
 
+def compress_images(directory="Pictures/wp"):
+    from PIL import Image
+    import PIL,glob
+
+    if not os.path.exists(f"{user_home}/.local/pmenu"):
+        os.makedirs(f"{user_home}/.local/pmenu")
+    for filename in os.listdir(f"{user_home}/{directory}"):
+        print(filename)
+        if os.path.islink(f"{user_home}/{directory}/{filename}"):
+            continue
+        base_width = 240
+        image = Image.open(f'{user_home}/Pictures/wp/{filename}')
+        width_percent = (base_width / float(image.size[0]))
+        hsize = int((float(image.size[1]) * float(width_percent)))
+        image = image.resize((base_width, hsize))
+        if image.mode in ("RGBA", "P"):
+            image = image.convert("RGB")
+        image.save(f'{user_home}/.local/pmenu/{filename}')
+        
 
 # widget = Gtk.Box()
 # print(dir(widget.props))
 
-win = Window()
-win.connect("destroy", Gtk.main_quit)
-win.show_all()
-
-Gtk.main()
+if not args.compress:
+    win = Window()
+    win.connect("destroy", Gtk.main_quit)
+    win.show_all()
+    Gtk.main()
+else:
+    compress_images()
